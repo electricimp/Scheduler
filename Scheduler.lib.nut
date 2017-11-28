@@ -174,13 +174,6 @@ class Scheduler {
         return newJob;
     }
 
-    function tzoffset(offset = null) {
-        // Store and retrieve the tzoffset from the global scope
-        if (!("timer_tzoffset" in ::getroottable())) ::timer_tzoffset <- 0;
-        if (offset != null) ::timer_tzoffset <- offset;
-        return ::timer_tzoffset;
-    }
-
     // -------------------- PRIVATE METHODS -------------------- //
 
     // Add a new timer into the correct position in the _jobs array
