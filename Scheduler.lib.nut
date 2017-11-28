@@ -78,8 +78,8 @@ class Scheduler {
     // Return: (integer) the id number of the timer (can be used to cancel the timer)
     function at(t, cb, ...) {
         local now = date();
-        local nowMillis = null;
-        if (_env != ENVIRONMENT_AGENT) nowMillis = hardware.millis() / 1000.0;
+        local hwSec = null;
+        if (_env != ENVIRONMENT_AGENT) hwSec = hardware.millis() / 1000.0;
 
         vargv.insert(0, null);
 
@@ -96,8 +96,8 @@ class Scheduler {
             newJob.sec = t;
             newJob.subSec = 0.0;
         } else {
-            newJob.sec = math.floor(nowMillis).tointeger() + (t - now.time);
-            newJob.subSec = nowMillis - math.floor(nowMillis).tointeger();
+            newJob.sec = math.floor(hwSec).tointeger() + (t - now.time);
+            newJob.subSec = hwSec - math.floor(hwSec).tointeger();
         }
 
         _addJob(newJob);
@@ -145,8 +145,8 @@ class Scheduler {
     // Return: (integer) the id number of the timer (can be used to cancel the timer)
     function repeatFrom(t, int, cb, ...) {
         local now = date();
-        local nowMillis = null;
-        if (_env != ENVIRONMENT_AGENT) nowMillis = hardware.millis() / 1000.0;
+        local hwSec = null;
+        if (_env != ENVIRONMENT_AGENT) hwSec = hardware.millis() / 1000.0;
 
         vargv.insert(0, null);
 
@@ -165,8 +165,8 @@ class Scheduler {
             newJob.sec = t;
             newJob.subSec = 0.0;
         } else {
-            newJob.sec = math.floor(nowMillis).tointeger() + (t - now.time);
-            newJob.subSec = nowMillis - math.floor(nowMillis).tointeger();
+            newJob.sec = math.floor(hwSec).tointeger() + (t - now.time);
+            newJob.subSec = hwSec - math.floor(hwSec).tointeger();
         }
 
         _addJob(newJob);
