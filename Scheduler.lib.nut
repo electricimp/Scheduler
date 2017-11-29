@@ -328,20 +328,19 @@ class Job {
 
     constructor(scheduler, params) {
         try {
-        _scheduler = scheduler;
+            _scheduler = scheduler;
 
-        if ("type" in params)   type   = params.type;
-        if ("id" in params)     id     = params.id;
-        if ("dur" in params)    dur    = params.dur;
-        if ("sec" in params)    sec    = params.sec;
-        if ("subSec" in params) subSec = params.subSec;
-        if ("repeat" in params) repeat = params.repeat;
-        if ("cb" in params)     cb     = params.cb;
-        if ("args" in params)   args   = params.args;
+            if ("type" in params)   type   = params.type;
+            if ("id" in params)     id     = params.id;
+            if ("dur" in params)    dur    = params.dur;
+            if ("sec" in params)    sec    = params.sec;
+            if ("subSec" in params) subSec = params.subSec;
+            if ("repeat" in params) repeat = params.repeat;
+            if ("cb" in params)     cb     = params.cb;
+            if ("args" in params)   args   = params.args;
 
-        return this;
+            return this;
         } catch (e) {
-            server.error("adfsln ");
             server.error(e);
             throw e;
         }
