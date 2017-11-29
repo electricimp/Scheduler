@@ -9,7 +9,7 @@ To add this library to your model, add the following lines to
 the top of your agent code:
 
 ```
-#require "Scheduler.class.nut:1.0.0"
+#require "Scheduler.lib.nut:1.0.0"
 ```
 
 ## Class Usage
