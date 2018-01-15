@@ -12,23 +12,22 @@ the top of your agent code:
 #require "Scheduler.lib.nut:1.0.0"
 ```
 
-## Class Usage
-
-### Scheduler
+## Scheduler Usage
 
 This class managers all the jobs and is used mostly for creating new jobs. Each method for creating a job will return the new Job class instance.
+
+### Constructor: Scheduler
+The constructor for Scheduler takes no parameters.
 
 ##### Example
 
 ```squirrel
-function myFunc(msg) {
-    server.log(msg);
-}
 sch <- Scheduler();
-job1 <- sch.set(5, myFunc, "Timer fired");
 ```
 
-#### Scheduler.set(\_duration, \_callback, [...])
+## Scheduler Methods
+
+### set(\_duration, \_callback, [...])
 Start a new timer to execute the callback after the specified duration. Returns the new job.
 
 Parameter         | Type           | Required       | Default        | Description
@@ -37,7 +36,7 @@ Parameter         | Type           | Required       | Default        | Descripti
 \_callback        | function       | Yes            | N/A            | The function to run when the timer finishes
 ...               | any            | No             | N/A            | Optional parameters that will be passed to the callback
 
-#### Scheduler.at(\_time, \_callback, [...])
+### at(\_time, \_callback, [...])
 Create a new job with a callback to execute at a specified time. The time can either be provided as an integer (do NOT provide a float)
 representing the number of seconds that have elapsed since midnight on 1 January 1970 OR as a string in the following
 format: "January 01, 2017 12:30 PM". Returns the new job.
@@ -48,7 +47,7 @@ Parameter         | Type           | Required       | Default        | Descripti
 \_callback        | function       | Yes            | N/A            | The function to run when the timer finishes
 ...               | any            | No             | N/A            | Optional parameters that will be passed to the callback
 
-#### Scheduler.repeat(\_interval, \_callback, [...])
+### repeat(\_interval, \_callback, [...])
 Create a new job with a callback that will repeat at the specified interval. Returns the new job.
 
 Parameter         | Type           | Required       | Default        | Description
@@ -57,7 +56,7 @@ Parameter         | Type           | Required       | Default        | Descripti
 \_callback        | function       | Yes            | N/A            | The function to run when the timer finishes
 ...               | any            | No             | N/A            | Optional parameters that will be passed to the callback
 
-#### Scheduler.repeat\_from(\_time, \_interval, \_callback, [...])
+### repeat\_from(\_time, \_interval, \_callback, [...])
 Create a new job with a callback to execute at the specified time as an integer or string (do NOT provide a float) and then repeat at the specified interval after that. Returns the new job.
 
 Parameter         | Type           | Required       | Default        | Description
@@ -67,14 +66,14 @@ Parameter         | Type           | Required       | Default        | Descripti
 \_callback        | function       | Yes            | N/A            | The function to run when the timer finishes
 ...               | any            | No             | N/A            | Optional parameters that will be passed to the callback
 
-#### Scheduler.tzoffset(offset)
+### tzoffset(offset)
 Set the offset for the timezone.
 
 Parameter         | Type           | Required       | Default        | Description
 ----------------- | -------------- | -------------- | -------------- | ----------------
 offset            | integer        | No             | null           | The time offset in hours
 
-### Job
+## Scheduler.Job
 
 An instance of this class is created for each new job (timer) created. Any action performed on an existing job will be done using a method on this class.
 
@@ -89,19 +88,19 @@ job1 <- sch.set(5, myFunc, "Timer fired");
 job1.cancel();
 ```
 
-#### Job.now()
+### now()
 Immediately execute this job. Returns this.
 
-#### Job.pause()
+### pause()
 Pause the execution of the job's timer. Returns this.
 
-#### Job.unpause()
+### unpause()
 Unpause the execution of the job's timer. Returns this.
 
-#### Job.cancel()
+### cancel()
 Cancel this job. Returns this.
 
-#### Job.reset([rstDur])
+### reset([rstDur])
 Reset this job (i.e. restart the timer). Optionally, a different duration to the
 original can be passed to this method. This can't be used for jobs created with
 the `Scheduler.at()` method or during the first timer of jobs created with the
