@@ -52,7 +52,7 @@ class Scheduler {
     // Return: (integer) the id number of the timer (can be used to cancel the timer)
     function set(dur, cb, ...) {
         local now = _getTime();
-        vargv.insert(0, null);
+        vargv.insert(0, {});
 
         if (dur < 0) dur = 0;
 
@@ -81,7 +81,7 @@ class Scheduler {
         local hwSec = null;
         if (_env != ENVIRONMENT_AGENT) hwSec = hardware.millis() / 1000.0;
 
-        vargv.insert(0, null);
+        vargv.insert(0, {});
 
         if (t < now.time) t = now.time;
 
@@ -114,7 +114,7 @@ class Scheduler {
     function repeat(int, cb, ...) {
         try {
             local now = _getTime();
-            vargv.insert(0, null);
+            vargv.insert(0, {});
 
             if (int < 0) int = 0;
 
@@ -148,7 +148,7 @@ class Scheduler {
         local hwSec = null;
         if (_env != ENVIRONMENT_AGENT) hwSec = hardware.millis() / 1000.0;
 
-        vargv.insert(0, null);
+        vargv.insert(0, {});
 
         if (int < 0) int = 0;
         if (t < now.time) t = now.time;
