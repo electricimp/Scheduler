@@ -1,97 +1,47 @@
-const SCHEDULER_ACCEPTED_ERROR = 1.0;
+function _calcTime() {
+    return date();
+}
 
-class RepeatFromTestCase extends ImpTestCase {
+function _calcTimeToFire() {
+    return time() + 1;
+}
 
-    _scheduler = null;
+function _calcStartTime(offset) {
+    return time() + offset;    
+}
 
-    function setUp() {
-        _scheduler = Scheduler();
-    }
+function _calcError(firedTime, timeToFire, setTime) {
+    return ((firedTime.time - setTime.time) + (firedTime.usec - setTime.usec) / 1000000.0);
+}
 
-    function testRepeatFromPositive() {
-        return _testRepeatFrom(time() + 2, 3);
-    }
+function _testRepeatFrom(timeToFire, interval) {
+    return Promise(function(resolve, reject) {
+        local first = true;
+        local setDate;
 
-    function testRepeatFromDecimal() {
-        return _testRepeatFrom(time() + 2, 3.2);
-    }
+        local testJob;
+        testJob = _scheduler.repeatFrom(timeToFire, interval, function() {
+            local firedDate = date();
+            local timeError;
+            if (first) {
+                timeError = firedDate.time - timeToFire;
+            } else {
+                timeError = ((firedDate.time - setDate.time) + (firedDate.usec - setDate.usec) / 1000000.0) - interval;
+            }
 
-    function testRepeatFromNow() {
-        return _testRepeatFrom(time(), 3);
-    }
+            try {
+                this.assertTrue((timeError <= SCHEDULER_ACCEPTED_ERROR && timeError >= (-1 * SCHEDULER_ACCEPTED_ERROR)), "Timer fired with error of: " + timeError);
 
-    function testRepeatFromNegative() {
-        return Promise(function(resolve, reject) {
-            local first = true;
-            local setTime = date();
-
-            local interval = -3;
-            local testJob;
-            testJob = _scheduler.repeatFrom(time() + 1, interval, function() {
-                local firedTime = date();
-                local timeError = ((firedTime.time - setTime.time) + (firedTime.usec - setTime.usec) / 1000000.0);
-
-                try {
-                    this.assertTrue((timeError < SCHEDULER_ACCEPTED_ERROR && timeError > (-1 * SCHEDULER_ACCEPTED_ERROR)), "Timer fired with error of: " + timeError);
-
-                    if (first) {
-                        first = false;
-                    } else {
-                        testJob.cancel();
-                        resolve();
-                    }
-                } catch (e) {
-                    reject(e);
-                }
-            }.bindenv(this));
-        }.bindenv(this));
-    }
-
-    function testRepeatFromWithParams() {
-        return Promise(function(resolve, reject) {
-            local job1 = null;
-            job1 = _scheduler.repeatFrom(time(), 0, function(testInt) {
-                try {
-                    this.assertTrue(testInt == 5, "Parameter not passed correctly to callback");
-                    resolve();
-                } catch (e) {
-                    reject(e);
-                }
-                job1.cancel();
-            }.bindenv(this), 5);
-        }.bindenv(this));
-    }
-
-    function _testRepeatFrom(timeToFire, interval) {
-        return Promise(function(resolve, reject) {
-            local first = true;
-            local setDate;
-
-            local testJob;
-            testJob = _scheduler.repeatFrom(timeToFire, interval, function() {
-                local firedDate = date();
-                local timeError;
                 if (first) {
-                    timeError = firedDate.time - timeToFire;
+                    first = false;
+                    setDate = date();
                 } else {
-                    timeError = ((firedDate.time - setDate.time) + (firedDate.usec - setDate.usec) / 1000000.0) - interval;
+                    testJob.cancel();
+                    resolve();
                 }
-
-                try {
-                    this.assertTrue((timeError <= SCHEDULER_ACCEPTED_ERROR && timeError >= (-1 * SCHEDULER_ACCEPTED_ERROR)), "Timer fired with error of: " + timeError);
-
-                    if (first) {
-                        first = false;
-                        setDate = date();
-                    } else {
-                        testJob.cancel();
-                        resolve();
-                    }
-                } catch (e) {
-                    reject(e);
-                }
-            }.bindenv(this));
+            } catch (e) {
+                reject(e);
+            }
         }.bindenv(this));
-    }
-
+    }.bindenv(this));
 }

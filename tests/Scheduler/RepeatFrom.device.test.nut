@@ -1,105 +1,48 @@
-const SCHEDULER_ACCEPTED_ERROR = 1.0;
+function _calcTime() {
+    return time();
+}
 
-class RepeatFromTestCase extends ImpTestCase {
+function _calcTimeToFire() {
+    return time() + 1;
+}
 
-    _scheduler = null;
+function _calcStartTime(offset) {
+    return offset;    
+}
 
-    function setUp() {
-        _scheduler = Scheduler();
-    }
+function _calcError(firedTime, timeToFire, setTime) {
+    return firedTime - timeToFire;
+}
 
-    function testRepeatFromPositive() {
-        return _testRepeatFrom(2, 3);
-    }
+function _testRepeatFrom(dur, interval) {
+    return Promise(function(resolve, reject) {
+        local first = true;
+        local timeToRepeat;
+        local setTime = time();
 
-    function testRepeatFromDecimal() {
-        return _testRepeatFrom(2, 3.2);
-    }
+        local testJob;
+        testJob = _scheduler.repeatFrom(setTime + dur, interval, function() {
+            local firedTime = time();
+            local timeError;
+            if (first) {
+                timeError = firedTime - (setTime + dur);
+            } else {
+                timeError = firedTime - timeToRepeat;
+            }
 
-    function testRepeatFromNow() {
-        return _testRepeatFrom(0, 3);
-    }
+            try {
+                this.assertTrue((timeError <= SCHEDULER_ACCEPTED_ERROR && timeError >= (-1 * SCHEDULER_ACCEPTED_ERROR)), "Timer fired with error of: " + timeError);
 
-    function testRepeatFromNegative() {
-        return Promise(function(resolve, reject) {
-            local first = true;
-            local timeToFire = time() + 1;
-
-            local interval = -3;
-            local testJob;
-            testJob = _scheduler.repeatFrom(timeToFire, interval, function() {
-                local firedTime = time();
-
-                local timeError;
                 if (first) {
-                    timeError = firedTime - timeToFire;
+                    first = false;
+                    timeToRepeat = time() + interval;
                 } else {
-                    timeError = firedTime - timeToFire;
-                }
-
-                try {
-                    this.assertTrue((timeError < SCHEDULER_ACCEPTED_ERROR && timeError > (-1 * SCHEDULER_ACCEPTED_ERROR)), "Timer fired with error of: " + timeError);
-
-                    if (first) {
-                        first = false;
-                        timeToFire = time();
-                    } else {
-                        testJob.cancel();
-                        resolve();
-                    }
-                } catch (e) {
-                    reject(e);
-                }
-            }.bindenv(this));
-        }.bindenv(this));
-    }
-
-    function testRepeatFromWithParams() {
-        return Promise(function(resolve, reject) {
-            local job1 = null;
-            job1 = _scheduler.repeatFrom(time(), 0, function(testInt) {
-                try {
-                    this.assertTrue(testInt == 5, "Parameter not passed correctly to callback");
+                    testJob.cancel();
                     resolve();
-                } catch (e) {
-                    reject(e);
                 }
-                job1.cancel();
-            }.bindenv(this), 5);
+            } catch (e) {
+                reject(e);
+            }
         }.bindenv(this));
-    }
-
-    function _testRepeatFrom(dur, interval) {
-        return Promise(function(resolve, reject) {
-            local first = true;
-            local timeToRepeat;
-            local setTime = time();
-
-            local testJob;
-            testJob = _scheduler.repeatFrom(setTime + dur, interval, function() {
-                local firedTime = time();
-                local timeError;
-                if (first) {
-                    timeError = firedTime - (setTime + dur);
-                } else {
-                    timeError = firedTime - timeToRepeat;
-                }
-
-                try {
-                    this.assertTrue((timeError <= SCHEDULER_ACCEPTED_ERROR && timeError >= (-1 * SCHEDULER_ACCEPTED_ERROR)), "Timer fired with error of: " + timeError);
-
-                    if (first) {
-                        first = false;
-                        timeToRepeat = time() + interval;
-                    } else {
-                        testJob.cancel();
-                        resolve();
-                    }
-                } catch (e) {
-                    reject(e);
-                }
-            }.bindenv(this));
-        }.bindenv(this));
-    }
-
+    }.bindenv(this));
 }
