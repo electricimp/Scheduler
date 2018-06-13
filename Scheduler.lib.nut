@@ -56,7 +56,7 @@ class Scheduler {
 
         if (dur < 0) dur = 0;
 
-        local newJob = Job(this, {
+        local newJob = Scheduler.Job(this, {
             "type": JOB_TYPE_SET,
             "id": _nextId++,
             "dur": dur,
@@ -85,7 +85,7 @@ class Scheduler {
 
         if (t < now.time) t = now.time;
 
-        local newJob = Job(this, {
+        local newJob = Scheduler.Job(this, {
             "type": JOB_TYPE_AT,
             "id": _nextId++,
             "cb": cb,
@@ -118,7 +118,7 @@ class Scheduler {
 
             if (int < 0) int = 0;
 
-            local newJob = Job(this, {
+            local newJob = Scheduler.Job(this, {
                 "type": JOB_TYPE_REPEAT,
                 "id": _nextId++,
                 "sec": _getSec(int, now),
@@ -131,8 +131,7 @@ class Scheduler {
 
             return newJob;
         } catch(e) {
-            server.error(e);
-            throw e;
+            return e;
         }
     }
 
@@ -153,7 +152,7 @@ class Scheduler {
         if (int < 0) int = 0;
         if (t < now.time) t = now.time;
 
-        local newJob = Job(this, {
+        local newJob = Scheduler.Job(this, {
             "type": JOB_TYPE_REPEAT_FROM,
             "id": _nextId++,
             "repeat": int,
@@ -311,7 +310,7 @@ class Scheduler {
 
 }
 
-class Job {
+class Scheduler.Job {
 
     _scheduler = null;
 
