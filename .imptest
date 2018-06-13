@@ -1,0 +1,14 @@
+{
+    "modelId": "J96MhfwCVbdQ",
+    "devices": [
+        "500098f1706fd38e"
+    ],
+    "agentFile": "Scheduler.lib.nut",
+    "deviceFile": "Scheduler.lib.nut",
+    "stopOnFailure": false,
+    "timeout": 30,
+    "tests": [
+        "*.test.nut",
+        "tests/**/*.test.nut"
+    ]
+}
