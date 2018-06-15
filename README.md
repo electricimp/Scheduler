@@ -107,9 +107,9 @@ This method reates a new job with a callback to execute at the specified time, a
 
 Parameter | Type | Required | Description
 --- | --- | --- | ---
-\_time | Integer or string | Yes | The time when the timer should end
-\_interval | Integer or float | Yes | The interval between executions of the timer in seconds
-\_callback | Function | Yes | The function to run when the timer finishes
+*time* | Integer or string | Yes | The time when the timer should end
+*interval* | Integer or float | Yes | The interval between executions of the timer in seconds
+*callback* | Function | Yes | The function to run when the timer finishes
 ... | Any | No | Optional parameters that will be passed into the callback
 
 #### Return Value ####
