@@ -1,24 +1,16 @@
 # Scheduler #
 
-A simple class to manage jobs with one-off and interval timers all of which can be cancelled.
-Can be used to create multiple jobs that actually share a single timer which may be helpful on
-the agent where the number of active timers is limited. This class also allows the user to pass
-parameters to the callbacks they provide for each job.
+This library provides a simple class to help you manage jobs using one-shot and repeating timers all of which can be cancelled. It can be used to create multiple jobs that share a single timer &mdash; which may be helpful in agent code, where the number of active timers is limited. This class also allows the user to pass parameters to the callbacks that they provide for each job.
 
-To add this library to your model, add the following lines to
-the top of your agent code:
-
-```
-#require "Scheduler.lib.nut:1.0.0"
-```
+**To use this library, add** `#require "Scheduler.lib.nut:1.0.0"` **to the top of your device or agent code.**
 
 ## Scheduler Usage ##
 
 This class manages all jobs. Each method for creating a job will return a new Scheduler.Job instance.
 
-### Constructor: Scheduler ###
+### Constructor: Scheduler() ###
 
-The constructor for Scheduler takes no parameters.
+The constructor has no parameters.
 
 #### Example ####
 
@@ -28,112 +20,116 @@ sch <- Scheduler();
 
 ## Scheduler Methods ##
 
-### set(*\_duration, \_callback[, ...]*) ###
+### set(*duration, callback[, ...]*) ###
 
-Starts a new timer that executes the callback after the specified duration.
+This method starts a new timer which executes the supplied callback after the specified duration.
 
 #### Parameters ####
 
-Parameter         | Type           | Required       | Default        | Description
------------------ | -------------- | -------------- | -------------- | ----------------
-\_duration        | float          | Yes            | N/A            | The duration of the timer in seconds
-\_callback        | function       | Yes            | N/A            | The function to run when the timer finishes
-...               | any            | No             | N/A            | Optional parameters that will be passed to the callback
+Parameter | Type | Required | Description
+--- | --- | --- | ---
+*duration* | Float | Yes | The duration of the timer in seconds
+*callback* | Function | Yes | The function to run when the timer finishes
+... | Any | No | Optional parameters that will be passed into the callback
 
 #### Return Value ####
 
 A Scheduler.Job instance.
 
 #### Example ####
-```
-function logMsg(msg) {
-    server.log(msg);
+
+```squirrel
+function logMsg(message) {
+  server.log(message);
 }
 
 job1 <- sch.set(5, logMsg, "Timer fired");
 ```
 
-### at(*\_time, \_callback[, ...]*) ###
+### at(*time, callback[, ...]*) ###
 
-Creates a new job with a callback to execute at a specified time. The time can either be provided as an integer (do NOT provide a float) representing the number of seconds that have elapsed since midnight on 1 January 1970 OR as a string in the following format: "January 01, 2017 12:30 PM".
+This method creates a new job with a callback to execute at the specified time. The time can either be provided as an integer representing the number of seconds that have elapsed since midnight on 1 January 1970, or as a string in the following format: `"January 01, 2017 12:30 PM"`.
 
 #### Parameters ####
 
-Parameter         | Type           | Required       | Default        | Description
------------------ | -------------- | -------------- | -------------- | ----------------
-\_time            | integer/string | Yes            | N/A            | The time when the timer should end
-\_callback        | function       | Yes            | N/A            | The function to run when the timer finishes
-...               | any            | No             | N/A            | Optional parameters that will be passed to the callback
+Parameter | Type | Required | Description
+--- | --- | --- | ---
+*time* | Integer or string | Yes | The time when the timer should end
+*callback* | Function | Yes | The function to run when the timer finishes
+... | Any | No | Optional parameters that will be passed into the callback
 
 #### Return Value ####
 
 A Scheduler.Job instance.
 
 #### Example ####
-```
+
+```squirrel
 function logMsg(msg) {
-    server.log(msg);
+  server.log(msg);
 }
 
-in5Sec <- time() + 5;
-job1 <- sch.at(in5Sec, logMsg, "Timer fired");
+local inFiveSecs = time() + 5;
+job1 <- sch.at(inFiveSecs, logMsg, "Timer fired");
 ```
 
-### repeat(*\_interval, \_callback[, ...]*) ###
+### repeat(*interval, callback[, ...]*) ###
 
-Creates a new job with a callback that will repeat at the specified interval.
+This method creates a new job with a callback that will repeat at the specified interval.
 
 #### Parameters ####
 
-Parameter         | Type           | Required       | Default        | Description
------------------ | -------------- | -------------- | -------------- | ----------------
-\_interval        | float          | Yes            | N/A            | The interval between executions of the timer in seconds
-\_callback        | function       | Yes            | N/A            | The function to run when the timer finishes
-...               | any            | No             | N/A            | Optional parameters that will be passed to the callback
+Parameter | Type | Required | Description
+--- | --- | --- | ---
+*interval* | Integer or float | Yes | The interval between executions of the timer in seconds
+*callback* | Function | Yes | The function to run when the timer finishes
+... | Any | No | Optional parameters that will be passed into the callback
 
 #### Return Value ####
 
 A Scheduler.Job instance, or an error message if an error was encountered.
 
 #### Example ####
-```
+
+```squirrel
 function logMsg(msg) {
-    server.log(msg);
+  server.log(msg);
 }
 
-job1 <- sch.repeat(10, logMsg, "Repeats every 10s...");
+job1 <- sch.repeat(10, logMsg, "Repeats every ten seconds...");
 ```
 
-### repeatFrom(*\_time, \_interval, \_callback[, ...]*) ###
+### repeatFrom(*time, interval, callback[, ...]*) ###
 
-Creates a new job with a callback to execute at the specified time as an integer or string (do NOT provide a float) and then repeat at the specified interval after that. Returns the new job.
+This method reates a new job with a callback to execute at the specified time, and then repeat at the specified interval.
 
 #### Parameters ####
 
-Parameter         | Type           | Required       | Default        | Description
------------------ | -------------- | -------------- | -------------- | ----------------
-\_time            | integer/string | Yes            | N/A            | The time when the timer should end
-\_interval        | float          | Yes            | N/A            | The interval between executions of the timer in seconds
-\_callback        | function       | Yes            | N/A            | The function to run when the timer finishes
-...               | any            | No             | N/A            | Optional parameters that will be passed to the callback
+Parameter | Type | Required | Description
+--- | --- | --- | ---
+\_time | Integer or string | Yes | The time when the timer should end
+\_interval | Integer or float | Yes | The interval between executions of the timer in seconds
+\_callback | Function | Yes | The function to run when the timer finishes
+... | Any | No | Optional parameters that will be passed into the callback
 
 #### Return Value ####
 
 A Scheduler.Job instance.
 
 #### Example ####
-```
+
+```squirrel
 function logMsg(msg) {
-    server.log(msg);
+  server.log(msg);
 }
 
-in5Sec <- time() + 5;
-job1 <- sch.repeatFrom(in5Sec, 10, logMsg, "Repeats every 10s...");
+local inFiveSecs = time() + 5;
+job1 <- sch.repeatFrom(inFiveSecs, 10, logMsg, "Repeats every ten seconds...");
 ```
 
-## Scheduler.Job ##
+## Scheduler.Job Usage ##
 
-You should never call the Scheduler.Job constructor directly, instead, you should create new jobs (timers) using Scheduler methods.
+You should never call the Scheduler.Job constructor directly. Instead, you should create new jobs (timers) using the Scheduler methods described above.
 
 ## Scheduler.Job Methods ##
 
@@ -149,7 +145,7 @@ The Scheduler.Job instance.
 
 ```squirrel
 function logMsg(msg) {
-    server.log(msg);
+  server.log(msg);
 }
 
 job1 <- sch.set(20, logMsg, "Timer fired");
@@ -168,7 +164,7 @@ The Scheduler.Job instance.
 
 ```squirrel
 function logMsg(msg) {
-    server.log(msg);
+  server.log(msg);
 }
 
 job1 <- sch.set(5, logMsg, "Timer fired");
@@ -177,7 +173,7 @@ job1.pause();
 
 ### unpause() ###
 
-Unpause the execution of the job's timer.
+Resume the execution of the job's timer.
 
 #### Return Value ####
 
@@ -187,7 +183,7 @@ The Scheduler.Job instance.
 
 ```squirrel
 function logMsg(msg) {
-    server.log(msg);
+  server.log(msg);
 }
 
 job1 <- sch.set(5, logMsg, "Timer fired");
@@ -208,14 +204,14 @@ The Scheduler.Job instance.
 
 ```squirrel
 function logMsg(msg) {
-    server.log(msg);
+  server.log(msg);
 }
 
 job1 <- sch.set(5, logMsg, "Timer fired");
 job1.cancel();
 ```
 
-### reset(*[rstDur]*) ###
+### reset(*[duration]*) ###
 
 Resets this job (i.e. restart the timer). Optionally, a different duration to the original can be passed to this method.
 
@@ -223,9 +219,9 @@ This method can't be used for jobs created with the Scheduler `at()` method or d
 
 #### Parameters ####
 
-Parameter         | Type           | Required       | Default           | Description
------------------ | -------------- | -------------- | ----------------- | ----------------
-rstDur            | float          | No             | original duration | The optional new timer duration
+Parameter | Type | Required | Description
+--- | --- | --- | ---
+duration | float | No | The optional new timer duration (Default: the originally specified duration)
 
 #### Return Value ####
 
@@ -235,13 +231,16 @@ The Scheduler.Job instance.
 
 ```squirrel
 function logMsg(msg) {
-    server.log(msg);
+  server.log(msg);
 }
 
+// Set a job that will fire in 10s
 job1 <- sch.set(10, logMsg, "Timer fired");
+
+// Change the job to fire in 5s
 job1.reset(5);
 ```
 
-# License
+## License ##
 
 The Scheduler library is licensed under the [MIT License](LICENSE).
