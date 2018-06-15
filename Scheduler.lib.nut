@@ -1,6 +1,6 @@
 //MIT License
 //
-//Copyright 2017 Electric Imp
+//Copyright 2018 Electric Imp
 //
 //SPDX-License-Identifier: MIT
 //
@@ -73,7 +73,7 @@ class Scheduler {
     // Start a new timer to trigger at a specific time
     //
     // Parameters:
-    //     t  (float)       the time that the timer should fire
+    //     t  (integer)     the time that the timer should fire
     //     cb (function)    the function to run when the timer fires
     // Return: (integer) the id number of the timer (can be used to cancel the timer)
     function at(t, cb, ...) {
@@ -82,7 +82,8 @@ class Scheduler {
         if (_env != ENVIRONMENT_AGENT) hwSec = hardware.millis() / 1000.0;
 
         vargv.insert(0, {});
-
+        
+        if (typeof t == "float") t = t.tointeger();
         if (t < now.time) t = now.time;
 
         local newJob = Scheduler.Job(this, {
@@ -108,7 +109,7 @@ class Scheduler {
     // Start a new timer to trigger repeatedly at a specific interval
     //
     // Parameters:
-    //     int (float)     the time between executions of the timer
+    //     int (integer/float)     the time between executions of the timer
     //     cb  (function)    the function to run when the timer fires
     // Return: (integer) the id number of the timer (can be used to cancel the timer)
     function repeat(int, cb, ...) {
@@ -138,9 +139,9 @@ class Scheduler {
     // Start a new timer to trigger repeatedly at a specific interval, starting at a specific time
     //
     // Parameters:
-    //     t   (float)     the time for the first execution of the timer
-    //     int (float)     the time between executions of the timer
-    //     cb  (function)    the function to run when the timer fires
+    //     t   (integer/string)  the time for the first execution of the timer
+    //     int (integer/float)   the time between executions of the timer
+    //     cb  (function)        the function to run when the timer fires
     // Return: (integer) the id number of the timer (can be used to cancel the timer)
     function repeatFrom(t, int, cb, ...) {
         local now = date();
@@ -150,6 +151,7 @@ class Scheduler {
         vargv.insert(0, {});
 
         if (int < 0) int = 0;
+        if (typeof t == "float") t = t.tointeger();
         if (t < now.time) t = now.time;
 
         local newJob = Scheduler.Job(this, {
