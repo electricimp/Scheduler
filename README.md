@@ -1,6 +1,6 @@
 # Scheduler #
 
-This library provides a simple class to help you manage jobs using one-shot and repeating timers all of which can be cancelled. It can be used to create multiple jobs that share a single timer &mdash; which may be helpful in agent code, where the number of active timers is limited. This class also allows the user to pass parameters to the callbacks that they provide for each job.
+This library provides a simple class to help you manage jobs using one-shot and repeating timers, all of which can be cancelled. It can be used to create multiple jobs that share a single timer &mdash; which may be helpful in agent code, where the number of active timers is limited. This class also allows the user to pass any number of parameters (of any type) to the callbacks that they provide for each job.
 
 **To use this library, add** `#require "Scheduler.lib.nut:1.0.0"` **to the top of your device or agent code.**
 
@@ -28,7 +28,7 @@ This method starts a new timer which executes the supplied callback after the sp
 
 Parameter | Type | Required | Description
 --- | --- | --- | ---
-*duration* | Float | Yes | The duration of the timer in seconds
+*duration* | Float | Yes | The period in seconds before the timer fires
 *callback* | Function | Yes | The function to run when the timer finishes
 ... | Any | No | Optional parameters that will be passed into the callback
 
@@ -54,8 +54,8 @@ This method creates a new job with a callback to execute at the specified time. 
 
 Parameter | Type | Required | Description
 --- | --- | --- | ---
-*time* | Integer or string | Yes | The time when the timer should end
-*callback* | Function | Yes | The function to run when the timer finishes
+*time* | Integer or string | Yes | The time at which the timer should fire
+*callback* | Function | Yes | The function to run when the timer fires
 ... | Any | No | Optional parameters that will be passed into the callback
 
 #### Return Value ####
@@ -81,8 +81,8 @@ This method creates a new job with a callback that will repeat at the specified 
 
 Parameter | Type | Required | Description
 --- | --- | --- | ---
-*interval* | Integer or float | Yes | The interval between executions of the timer in seconds
-*callback* | Function | Yes | The function to run when the timer finishes
+*interval* | Integer or float | Yes | The interval between timer firings in seconds
+*callback* | Function | Yes | The function to run when the timer fires
 ... | Any | No | Optional parameters that will be passed into the callback
 
 #### Return Value ####
@@ -107,9 +107,9 @@ This method reates a new job with a callback to execute at the specified time, a
 
 Parameter | Type | Required | Description
 --- | --- | --- | ---
-*time* | Integer or string | Yes | The time when the timer should end
-*interval* | Integer or float | Yes | The interval between executions of the timer in seconds
-*callback* | Function | Yes | The function to run when the timer finishes
+*time* | Integer or string | Yes | The time at which the timer should fire
+*interval* | Integer or float | Yes | The interval between timer firings in seconds
+*callback* | Function | Yes | The function to run when the timer fires
 ... | Any | No | Optional parameters that will be passed into the callback
 
 #### Return Value ####
@@ -213,9 +213,9 @@ job1.cancel();
 
 ### reset(*[duration]*) ###
 
-Resets this job (i.e. restart the timer). Optionally, a different duration to the original can be passed to this method.
+This method resets the target job &mdash; ie. it restarts the timer). Optionally, a new duration can be passed in to alter when the timer fires (if it has not done so already).
 
-This method can't be used for jobs created with the Scheduler `at()` method or during the first timer of jobs created with the Scheduler `repeatFrom()` method, however it can be used for Scheduler `repeatFrom()` jobs after they've fired the first time.
+This method can't be used for jobs created with the Scheduler *at()* method or during the first timer of jobs created with the Scheduler *repeatFrom()* method. However, it can be used for Scheduler *repeatFrom()* jobs after they have fired the first time.
 
 #### Parameters ####
 
