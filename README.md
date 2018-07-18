@@ -4,6 +4,8 @@ This library provides a simple class to help you manage jobs using one-shot and 
 
 **To use this library, add** `#require "Scheduler.lib.nut:0.1.0"` **to the top of your device or agent code.**
 
+**Note:** This is a beta release. Please file issues in Github to help us improve this library.
+
 ## Scheduler Usage ##
 
 This class manages all jobs. Each method for creating a job will return a new Scheduler.Job instance.
