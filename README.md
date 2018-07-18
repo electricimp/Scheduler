@@ -2,7 +2,7 @@
 
 This library provides a simple class to help you manage jobs using one-shot and repeating timers, all of which can be cancelled. It can be used to create multiple jobs that share a single timer &mdash; which may be helpful in agent code, where the number of active timers is limited. This class also allows the user to pass any number of parameters (of any type) to the callbacks that they provide for each job.
 
-**To use this library, add** `#require "Scheduler.lib.nut:1.0.0"` **to the top of your device or agent code.**
+**To use this library, add** `#require "Scheduler.lib.nut:0.1.0"` **to the top of your device or agent code.**
 
 ## Scheduler Usage ##
 

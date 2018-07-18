@@ -31,7 +31,7 @@ const JOB_ERROR_RESET = "Cannot reset job type: %s";
 
 class Scheduler {
 
-    static VERSION = "1.0.0";
+    static VERSION = "0.1.0";
 
     _env = null;
 
@@ -78,11 +78,9 @@ class Scheduler {
     // Return: (integer) the id number of the timer (can be used to cancel the timer)
     function at(t, cb, ...) {
         local now = date();
-        local hwSec = null;
-        if (_env != ENVIRONMENT_AGENT) hwSec = hardware.millis() / 1000.0;
 
         vargv.insert(0, {});
-        
+
         if (typeof t == "float") t = t.tointeger();
         if (t < now.time) t = now.time;
 
@@ -97,6 +95,7 @@ class Scheduler {
             newJob.sec = t;
             newJob.subSec = 0.0;
         } else {
+            local hwSec = hardware.millis() / 1000.0;
             newJob.sec = math.floor(hwSec).tointeger() + (t - now.time);
             newJob.subSec = hwSec - math.floor(hwSec).tointeger();
         }
@@ -145,8 +144,6 @@ class Scheduler {
     // Return: (integer) the id number of the timer (can be used to cancel the timer)
     function repeatFrom(t, int, cb, ...) {
         local now = date();
-        local hwSec = null;
-        if (_env != ENVIRONMENT_AGENT) hwSec = hardware.millis() / 1000.0;
 
         vargv.insert(0, {});
 
@@ -166,6 +163,7 @@ class Scheduler {
             newJob.sec = t;
             newJob.subSec = 0.0;
         } else {
+            local hwSec = hardware.millis() / 1000.0;
             newJob.sec = math.floor(hwSec).tointeger() + (t - now.time);
             newJob.subSec = hwSec - math.floor(hwSec).tointeger();
         }
