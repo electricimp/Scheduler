@@ -24,6 +24,9 @@
 
 @include "tests/global.nut";
 
+// Repeat from helpers differ from helper class include them here instead
+// HELPERS
+// ------------------------------------------------------------
 function _isAgent() {
     return (imp.environment() == ENVIRONMENT_AGENT);
 }
@@ -87,6 +90,9 @@ function _testRepeatFrom(timeToFire, interval) {
     }.bindenv(this));
 }
 
+// ------------------------------------------------------------
+
+// Tests
 class RepeatFromTestCase extends ImpTestCase {
 
     _scheduler = null;
