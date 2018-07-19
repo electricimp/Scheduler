@@ -2,9 +2,9 @@
 
 This library provides a simple class to help you manage jobs using one-shot and repeating timers, all of which can be cancelled. It can be used to create multiple jobs that share a single timer &mdash; which may be helpful in agent code, where the number of active timers is limited. This class also allows the user to pass any number of parameters (of any type) to the callbacks that they provide for each job.
 
-**To use this library, add** `#require "Scheduler.lib.nut:0.1.0"` **to the top of your device or agent code.**
+**To add this library to your code, please paste its source into your application code**
 
-**Note:** This is a beta release. Please file issues in Github to help us improve this library.
+**Note** This is a beta release. Please file issues in [GitHub](https://github.com/electricimp/Scheduler) to help us improve this library.
 
 ## Scheduler Usage ##
 
@@ -28,11 +28,11 @@ This method starts a new timer which executes the supplied callback after the sp
 
 #### Parameters ####
 
-Parameter | Type | Required | Description
---- | --- | --- | ---
-*duration* | Float | Yes | The period in seconds before the timer fires
-*callback* | Function | Yes | The function to run when the timer finishes
-... | Any | No | Optional parameters that will be passed into the callback
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| *duration* | Float | Yes | The period in seconds before the timer fires |
+| *callback* | Function | Yes | The function to run when the timer finishes |
+| ... | Any | No | Optional parameters that will be passed into the callback |
 
 #### Return Value ####
 
@@ -54,11 +54,11 @@ This method creates a new job with a callback to execute at the specified time. 
 
 #### Parameters ####
 
-Parameter | Type | Required | Description
---- | --- | --- | ---
-*time* | Integer | Yes | The time at which the timer should fire
-*callback* | Function | Yes | The function to run when the timer fires
-... | Any | No | Optional parameters that will be passed into the callback
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| *time* | Integer | Yes | The time at which the timer should fire |
+| *callback* | Function | Yes | The function to run when the timer fires |
+| ... | Any | No | Optional parameters that will be passed into the callback |
 
 #### Return Value ####
 
@@ -81,11 +81,11 @@ This method creates a new job with a callback that will repeat at the specified 
 
 #### Parameters ####
 
-Parameter | Type | Required | Description
---- | --- | --- | ---
-*interval* | Integer or float | Yes | The interval between timer firings in seconds
-*callback* | Function | Yes | The function to run when the timer fires
-... | Any | No | Optional parameters that will be passed into the callback
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| *interval* | Integer or float | Yes | The interval between timer firings in seconds |
+| *callback* | Function | Yes | The function to run when the timer fires |
+| ... | Any | No | Optional parameters that will be passed into the callback |
 
 #### Return Value ####
 
@@ -107,12 +107,12 @@ This method reates a new job with a callback to execute at the specified time, a
 
 #### Parameters ####
 
-Parameter | Type | Required | Description
---- | --- | --- | ---
-*time* | Integer | Yes | The time at which the timer should fire
-*interval* | Integer or float | Yes | The interval between timer firings in seconds
-*callback* | Function | Yes | The function to run when the timer fires
-... | Any | No | Optional parameters that will be passed into the callback
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| *time* | Integer | Yes | The time at which the timer should fire |
+| *interval* | Integer or float | Yes | The interval between timer firings in seconds |
+| *callback* | Function | Yes | The function to run when the timer fires |
+| ... | Any | No | Optional parameters that will be passed into the callback |
 
 #### Return Value ####
 
@@ -137,7 +137,7 @@ You should never call the Scheduler.Job constructor directly. Instead, you shoul
 
 ### now() ###
 
-Immediately execute this job.
+This method immediately execute the job.
 
 #### Return Value ####
 
@@ -156,7 +156,7 @@ job1.now();
 
 ### pause() ###
 
-Pause the execution of the job's timer.
+This method pauses the execution of the job's timer.
 
 #### Return Value ####
 
@@ -175,7 +175,7 @@ job1.pause();
 
 ### unpause() ###
 
-Resume the execution of the job's timer.
+This method resumes the execution of a paused job's timer.
 
 #### Return Value ####
 
@@ -196,7 +196,7 @@ imp.wakeup(10, job1.unpause);
 
 ### cancel() ###
 
-Cancel this job.
+This method cancels the job.
 
 #### Return Value ####
 
@@ -221,9 +221,9 @@ This method can't be used for jobs created with the Scheduler *at()* method or d
 
 #### Parameters ####
 
-Parameter | Type | Required | Description
---- | --- | --- | ---
-duration | float | No | The optional new timer duration (Default: the originally specified duration)
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| *duration* | Float | No | The optional new timer duration. Default: the originally specified duration |
 
 #### Return Value ####
 
