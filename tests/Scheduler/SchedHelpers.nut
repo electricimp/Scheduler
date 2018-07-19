@@ -22,4 +22,44 @@
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 //OTHER DEALINGS IN THE SOFTWARE.
 
-const SCHEDULER_ACCEPTED_ERROR = 1.0;
+// Helper functions for Scheduler tests (except reapeat from)
+
+function _isAgent() {
+    return (imp.environment() == ENVIRONMENT_AGENT);
+}
+
+// Used in Set, Repeat, At
+function _calcTime() {
+    return (_isAgent()) ? time() : hardware.millis() / 1000.0;
+}
+
+// Used in At, Set, Repeat
+function _calcDate() {
+    return (_isAgent()) ? date() : hardware.millis() / 1000.0;
+}
+
+// Used in Set, Repeat, At, Repeat from
+function _calcError(firedTime, setTime) {
+    if (_isAgent()) {
+        return ((firedTime.time - setTime.time) + (firedTime.usec - setTime.usec) / 1000000.0);
+    } else {
+        if (typeof firedTime == "integer" || typeof firedTime == "float") {
+            return firedTime - setTime;
+        } else if (typeof firedTime == "table") {
+            return firedTime.time - setTime;
+        }
+    }
+}
+
+// Used in Repeat
+function _incrementTime(setTime, interval) {
+    if (_isAgent()) {
+        setTime.time += math.floor(interval).tointeger();
+        setTime.usec += (interval - math.floor(interval).tointeger()) * 1000000;
+        return setTime;
+    } else {
+        return setTime += interval;
+    }
+}
+
+

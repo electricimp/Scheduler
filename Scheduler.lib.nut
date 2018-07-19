@@ -35,21 +35,24 @@ class Scheduler {
 
     _env = null;
 
-    _jobs       = [];
+    _jobs       = null;
     _currentJob = null;
     _currentId  = null;
-    _nextId     = 1;
+    _nextId     = null;
 
     constructor() {
-        _env = imp.environment();
+        _env    = imp.environment();
+        _jobs   = [];
+        _nextId = 1;
     }
 
     // Start a new timer to trigger after a specific duration
     //
     // Parameters:
-    //     dur (float)       the duration of the timer
-    //     cb  (function)    the function to run when the timer fires
-    // Return: (integer) the id number of the timer (can be used to cancel the timer)
+    //     dur (float)          the duration of the timer
+    //     cb  (function)       the function to run when the timer fires
+    //     ... (optional args)  optional params to pass to cb function
+    // Return: (integer) a Job instance
     function set(dur, cb, ...) {
         local now = _getTime();
         vargv.insert(0, {});
@@ -73,44 +76,66 @@ class Scheduler {
     // Start a new timer to trigger at a specific time
     //
     // Parameters:
-    //     t  (integer)     the time that the timer should fire
-    //     cb (function)    the function to run when the timer fires
-    // Return: (integer) the id number of the timer (can be used to cancel the timer)
+    //     t  (integer)         the time that the timer should fire
+    //     cb (function)        the function to run when the timer fires
+    //     ... (optional args)  optional params to pass to cb function
+    // Return: (integer) a Job instance
     function at(t, cb, ...) {
+        // Get timestamps
+        local ms = (_env != ENVIRONMENT_AGENT) ? hardware.millis() : null;
         local now = date();
 
+        // Store args to be passed to callback
         vargv.insert(0, {});
 
+        // Ensure t parameter is an integer
         if (typeof t == "float") t = t.tointeger();
+        // If timer should have already fired, set time to now
         if (t < now.time) t = now.time;
 
+        // Agent uses date table to schedule timers with sec
+        // and subSec Job settings
+        local sec = t;
+        local subSec = 0.0;
+
+        // Device will use hardware millis timing to schedule
+        // Job sec and subSec settings
+        if (ms != null) {
+            local secFloat = ms / 1000.0;
+            local secInt   = ms / 1000;
+
+            // Calculate the hardware millis (second granularity) value
+            // when timer should fire
+            sec = secInt + (t - now.time);
+            // Calculate the hardware millis (sub second granularity) value
+            // when timer should fire
+            subSec = secFloat - secInt;
+        }
+
+        // Create a new Job
         local newJob = Scheduler.Job(this, {
             "type": JOB_TYPE_AT,
             "id": _nextId++,
+            "sec": sec,
+            "subSec": subSec,
             "cb": cb,
             "args": vargv
         });
 
-        if (_env == ENVIRONMENT_AGENT) {
-            newJob.sec = t;
-            newJob.subSec = 0.0;
-        } else {
-            local hwSec = hardware.millis() / 1000.0;
-            newJob.sec = math.floor(hwSec).tointeger() + (t - now.time);
-            newJob.subSec = hwSec - math.floor(hwSec).tointeger();
-        }
-
+        // Add Job to the queue
         _addJob(newJob);
 
+        // Return the Job instance
         return newJob;
     }
 
     // Start a new timer to trigger repeatedly at a specific interval
     //
     // Parameters:
-    //     int (integer/float)     the time between executions of the timer
-    //     cb  (function)    the function to run when the timer fires
-    // Return: (integer) the id number of the timer (can be used to cancel the timer)
+    //     int (integer/float)  the time between executions of the timer
+    //     cb (function)        the function to run when the timer fires
+    //     ... (optional args)  optional params to pass to cb function
+    // Return: (integer) a Job instance
     function repeat(int, cb, ...) {
         try {
             local now = _getTime();
@@ -140,36 +165,58 @@ class Scheduler {
     // Parameters:
     //     t   (integer/string)  the time for the first execution of the timer
     //     int (integer/float)   the time between executions of the timer
-    //     cb  (function)        the function to run when the timer fires
-    // Return: (integer) the id number of the timer (can be used to cancel the timer)
+    //     cb (function)         the function to run when the timer fires
+    //     ... (optional args)   optional params to pass to cb function
+    // Return: (integer) a Job instance
     function repeatFrom(t, int, cb, ...) {
+        // Get timestamps
+        local ms = (_env != ENVIRONMENT_AGENT) ? hardware.millis() : null;
         local now = date();
 
+        // Store args to be passed to callback
         vargv.insert(0, {});
 
+        // Set time between timers to valid range
         if (int < 0) int = 0;
+        // Ensure t parameter is an integer
         if (typeof t == "float") t = t.tointeger();
+        // If timer should have already fired, set time to now
         if (t < now.time) t = now.time;
 
+        // Agent uses date table to schedule timers with sec
+        // and subSec Job settings
+        local sec = t;
+        local subSec = 0.0;
+
+        // Device will use hardware millis timing to schedule
+        // Job sec and subSec settings
+        if (ms != null) {
+            local secFloat = ms / 1000.0;
+            local secInt   = ms / 1000;
+
+            // Calculate the hardware millis (second granularity) value
+            // when timer should fire
+            sec = secInt + (t - now.time);
+            // Calculate the hardware millis (sub second granularity) value
+            // when timer should fire
+            subSec = secFloat - secInt;
+        }
+
+        // Create a new Job
         local newJob = Scheduler.Job(this, {
             "type": JOB_TYPE_REPEAT_FROM,
             "id": _nextId++,
             "repeat": int,
+            "sec": sec,
+            "subSec": subSec,
             "cb": cb,
             "args": vargv
         });
 
-        if (_env == ENVIRONMENT_AGENT) {
-            newJob.sec = t;
-            newJob.subSec = 0.0;
-        } else {
-            local hwSec = hardware.millis() / 1000.0;
-            newJob.sec = math.floor(hwSec).tointeger() + (t - now.time);
-            newJob.subSec = hwSec - math.floor(hwSec).tointeger();
-        }
-
+        // Add Job to the queue
         _addJob(newJob);
 
+        // Return the Job instance
         return newJob;
     }
 

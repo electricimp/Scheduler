@@ -56,7 +56,7 @@ This method creates a new job with a callback to execute at the specified time. 
 
 Parameter | Type | Required | Description
 --- | --- | --- | ---
-*time* | Integer or string | Yes | The time at which the timer should fire
+*time* | Integer | Yes | The time at which the timer should fire
 *callback* | Function | Yes | The function to run when the timer fires
 ... | Any | No | Optional parameters that will be passed into the callback
 
@@ -109,7 +109,7 @@ This method reates a new job with a callback to execute at the specified time, a
 
 Parameter | Type | Required | Description
 --- | --- | --- | ---
-*time* | Integer or string | Yes | The time at which the timer should fire
+*time* | Integer | Yes | The time at which the timer should fire
 *interval* | Integer or float | Yes | The interval between timer firings in seconds
 *callback* | Function | Yes | The function to run when the timer fires
 ... | Any | No | Optional parameters that will be passed into the callback
