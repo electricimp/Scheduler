@@ -22,29 +22,15 @@
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 //OTHER DEALINGS IN THE SOFTWARE.
 
-const JOB_TYPE_SET         = "set";
-const JOB_TYPE_AT          = "at";
-const JOB_TYPE_REPEAT      = "repeat";
-const JOB_TYPE_REPEAT_FROM = "repeat from";
 
-const JOB_ERROR_RESET = "Cannot reset job type: %s";
-
+// Limitations of imp.wakeup()
+// - The timer has only centisecond (0.01s) resolution
+// - The imp supports timer durations of up to 2 to the 30
+//   centiseconds — ie. 124 days (10713600 sec);
 class Scheduler {
 
-    static VERSION = "0.1.0";
-
-    _env = null;
-
-    _jobs       = null;
-    _currentJob = null;
-    _currentId  = null;
-    _nextId     = null;
-
-    constructor() {
-        _env    = imp.environment();
-        _jobs   = [];
-        _nextId = 1;
-    }
+    static VERSION  = "0.1.0";
+    static ROOT     = getroottable();
 
     // Start a new timer to trigger after a specific duration
     //
@@ -54,22 +40,22 @@ class Scheduler {
     //     ... (optional args)  optional params to pass to cb function
     // Return: (integer) a Job instance
     function set(dur, cb, ...) {
-        local now = _getTime();
-        vargv.insert(0, {});
+        // Add context to vargv array, since we are going to
+        // use acall to trigger callback
+        vargv.insert(0, ROOT);
 
-        if (dur < 0) dur = 0;
-
-        local newJob = Scheduler.Job(this, {
-            "type": JOB_TYPE_SET,
-            "id": _nextId++,
-            "dur": dur,
-            "sec": _getSec(dur, now),
-            "subSec": _getSubSec(dur, now),
-            "cb": cb,
-            "args": vargv
+        // Create job
+        local newJob = Job(_queue, {
+            "type" : Job.TYPE_SET,
+            "cb"   : cb,
+            "args" : vargv,
+            "dur"  : dur
         });
-        _addJob(newJob);
 
+        // Add job to queue
+        _queue.addJob(newJob);
+
+        // Return job
         return newJob;
     }
 
@@ -81,388 +67,375 @@ class Scheduler {
     //     ... (optional args)  optional params to pass to cb function
     // Return: (integer) a Job instance
     function at(t, cb, ...) {
-        // Get timestamps
-        local ms = (_env != ENVIRONMENT_AGENT) ? hardware.millis() : null;
-        local now = date();
+        // Add context to vargv array, since we are going to
+        // use acall to trigger callback
+        vargv.insert(0, ROOT);
 
-        // Store args to be passed to callback
-        vargv.insert(0, {});
-
-        // Ensure t parameter is an integer
-        if (typeof t == "float") t = t.tointeger();
-        // If timer should have already fired, set time to now
-        if (t < now.time) t = now.time;
-
-        // Agent uses date table to schedule timers with sec
-        // and subSec Job settings
-        local sec = t;
-        local subSec = 0.0;
-
-        // Device will use hardware millis timing to schedule
-        // Job sec and subSec settings
-        if (ms != null) {
-            local secFloat = ms / 1000.0;
-            local secInt   = ms / 1000;
-
-            // Calculate the hardware millis (second granularity) value
-            // when timer should fire
-            sec = secInt + (t - now.time);
-            // Calculate the hardware millis (sub second granularity) value
-            // when timer should fire
-            subSec = secFloat - secInt;
-        }
-
-        // Create a new Job
-        local newJob = Scheduler.Job(this, {
-            "type": JOB_TYPE_AT,
-            "id": _nextId++,
-            "sec": sec,
-            "subSec": subSec,
-            "cb": cb,
-            "args": vargv
+        // Create job
+        local newJob = Job(_queue, {
+            "type" : Job.TYPE_AT,
+            "cb"   : cb,
+            "args" : vargv,
+            "time" : t
         });
 
-        // Add Job to the queue
-        _addJob(newJob);
+        // Add job to queue
+        _queue.addJob(newJob);
 
-        // Return the Job instance
+        // Return job
         return newJob;
-    }
-
-    // Start a new timer to trigger repeatedly at a specific interval
-    //
-    // Parameters:
-    //     int (integer/float)  the time between executions of the timer
-    //     cb (function)        the function to run when the timer fires
-    //     ... (optional args)  optional params to pass to cb function
-    // Return: (integer) a Job instance
-    function repeat(int, cb, ...) {
-        try {
-            local now = _getTime();
-            vargv.insert(0, {});
-
-            if (int < 0) int = 0;
-
-            local newJob = Scheduler.Job(this, {
-                "type": JOB_TYPE_REPEAT,
-                "id": _nextId++,
-                "sec": _getSec(int, now),
-                "subSec": _getSubSec(int, now),
-                "repeat": int,
-                "cb": cb,
-                "args": vargv
-            });
-            _addJob(newJob);
-
-            return newJob;
-        } catch(e) {
-            return e;
-        }
     }
 
     // Start a new timer to trigger repeatedly at a specific interval, starting at a specific time
     //
     // Parameters:
-    //     t   (integer/string)  the time for the first execution of the timer
     //     int (integer/float)   the time between executions of the timer
+    //     t   (integer/null)    the time for the first execution of the timer, or
+    //                           null if timer should trigger immediately
     //     cb (function)         the function to run when the timer fires
     //     ... (optional args)   optional params to pass to cb function
     // Return: (integer) a Job instance
-    function repeatFrom(t, int, cb, ...) {
-        // Get timestamps
-        local ms = (_env != ENVIRONMENT_AGENT) ? hardware.millis() : null;
-        local now = date();
+    function repeat(int, t, cb, ...) {
+        // Add context to vargv array, since we are going to
+        // use acall to trigger callback
+        vargv.insert(0, ROOT);
 
-        // Store args to be passed to callback
-        vargv.insert(0, {});
+        // Ensure valid timer can be created
+        local params = {
+            "cb"   : cb,
+            "args" : vargv
+        };
 
-        // Set time between timers to valid range
-        if (int < 0) int = 0;
-        // Ensure t parameter is an integer
-        if (typeof t == "float") t = t.tointeger();
-        // If timer should have already fired, set time to now
-        if (t < now.time) t = now.time;
+        // Add repeat interval to params
+        params.repeatSec <- (int < 0) ? 0 : int;
 
-        // Agent uses date table to schedule timers with sec
-        // and subSec Job settings
-        local sec = t;
-        local subSec = 0.0;
-
-        // Device will use hardware millis timing to schedule
-        // Job sec and subSec settings
-        if (ms != null) {
-            local secFloat = ms / 1000.0;
-            local secInt   = ms / 1000;
-
-            // Calculate the hardware millis (second granularity) value
-            // when timer should fire
-            sec = secInt + (t - now.time);
-            // Calculate the hardware millis (sub second granularity) value
-            // when timer should fire
-            subSec = secFloat - secInt;
+        // Add type and parameter used to calculate timer
+        // trigger times
+        if (t == null) {
+            params.type <- Job.TYPE_REPEAT;
+            params.dur <- int;
+        } else {
+            params.type <- Job.TYPE_REPEAT_FROM;
+            params.time <- t;
         }
 
-        // Create a new Job
-        local newJob = Scheduler.Job(this, {
-            "type": JOB_TYPE_REPEAT_FROM,
-            "id": _nextId++,
-            "repeat": int,
-            "sec": sec,
-            "subSec": subSec,
-            "cb": cb,
-            "args": vargv
-        });
+        // Create job
+        local newJob = Job(_queue, params);
 
-        // Add Job to the queue
-        _addJob(newJob);
+        // Add job to queue
+        _queue.addJob(newJob);
 
-        // Return the Job instance
+        // Return job
         return newJob;
     }
 
-    // -------------------- PRIVATE METHODS -------------------- //
+    // Queue to manage jobs
+    // -------------------------------------------------------------------
+    _queue = {
 
-    // Add a new timer into the correct position in the _jobs array
-    //
-    // Parameters:
-    //     newJob (table)       a table representing the new timer
-    function _addJob(newJob) {
-        if (_jobs.len() == 0) {
-            _jobs.insert(0, newJob);
-            _start();
-            return;
-        }
+        "currentTimer" : null,
+        "currentJobId" : null,
+        "nextId"       : 1,
+        "jobs"         : [],
 
-        for (local i = _jobs.len() - 1; i >= 0; i--) {
-            if ((_jobs[i].sec < newJob.sec) || (_jobs[i].sec == newJob.sec && _jobs[i].subSec < newJob.subSec)) {
-                _jobs.insert(i + 1, newJob);
-                break;
-            } else if (i == 0) {
-                _jobs.insert(0, newJob);
-                _start();
-                break;
+        // Add a new timer into the correct position in the jobs array
+        // Parameters:
+        //     newJob (table)       a table representing the new timer
+        addJob = function(newJob) {
+            // If no jobs are pending add job to queue, and start
+            // the timer
+            if (jobs.len() == 0) {
+                jobs.insert(0, newJob);
+                // Update job status
+                newJob.status = newJob.STATUS_QUEUED;
+                startTimer();
+                return;
             }
-        }
-    }
 
-    function _next() {
-        if(_currentJob != null) {
-            imp.cancelwakeup(_currentJob);
-            _currentJob = null;
-            _currentId = null;
-        }
-
-        if (_jobs.len() >= 1) {
-            // If the current timer needs to repeat it should be added back into the array
-            if ("repeat" in _jobs[0] && _jobs[0].repeat != null) {
-                local tmpJob = _jobs[0];
-                _jobs.remove(0);
-                tmpJob.sec += math.floor(tmpJob.repeat).tointeger();
-                tmpJob.subSec += tmpJob.repeat - math.floor(tmpJob.repeat).tointeger();
-
-                // Change type from JOB_TYPE_REPEAT_FROM to JOB_TYPE_REPEAT (important for resetting)
-                if (tmpJob.type == JOB_TYPE_REPEAT_FROM) tmpJob.type = JOB_TYPE_REPEAT;
-
-                _addJob(tmpJob);
-            } else {
-                _jobs.remove(0);
-            }
-        }
-
-        _start();
-    }
-
-    function _start() {
-        if (_jobs.len() > 0) {
-            if (_currentJob != null) imp.cancelwakeup(_currentJob);
-
-            local dur = _getDur(_jobs[0]);
-
-            _currentJob = imp.wakeup(dur, function() {
-                _jobs[0].cb.acall(_jobs[0].args);
-                _next();
-            }.bindenv(this));
-            _currentId = _jobs[0].id;
-        }
-    }
-
-    // Cancel an existing timer
-    //
-    // Parameters:
-    //     id (integer)       the id of the existing timer
-    // Return: (boolean) whether the timer was removed or not
-    function _cancel(id) {
-        // If the timer to cancel is currently running, cancel it
-        if (_currentId == id) {
-            imp.cancelwakeup(_currentJob);
-            _currentJob = null;
-            _currentId = null;
-        }
-
-        // Look for the timer in the queue and remove it
-        foreach (i, t in _jobs) {
-            if (_jobs[i].id == id) {
-                _jobs.remove(i);
-                // Check if the timer to cancel is at the front of the queue
-                if (i == 0 && _jobs.len() >= 1) {
-                    _next();
+            // Iterate through the queue backwards looking at where
+            // to insert the new job
+            for (local i = jobs.len() - 1; i >= 0; i--) {
+                if ((jobs[i].triggerAtSec < newJob.triggerAtSec) ||
+                    (jobs[i].triggerAtSec == newJob.triggerAtSec &&
+                     jobs[i].triggerAtMs < newJob.triggerAtMs)) {
+                    jobs.insert(i + 1, newJob);
+                    // Update job status
+                    newJob.status = newJob.STATUS_QUEUED;
+                    break;
+                } else if (i == 0) {
+                    jobs.insert(0, newJob);
+                    // Update job status
+                    newJob.status = newJob.STATUS_QUEUED;
+                    // Cancel current timer, and set timer for this
+                    // job instead
+                    startTimer();
+                    break;
                 }
             }
-        }
-    }
+        },
 
-    // Trigger an existing timer's callback to run now (timer will also continue as normal)
-    //
-    // Parameters:
-    //     id (integer)       the id of the existing timer
-    // Return: (boolean) whether the callback was triggered or not
-    function _now(id) {
-        foreach (i, t in _jobs) {
-            if (_jobs[i].id == id) {
-                _jobs[i].cb.acall(_jobs[i].args);
+        // Calls current job's callback. Then removes the current Job
+        // from the queue, if it is a repeated job, adds that job back
+        // into the queue's
+        next = function() {
+            if (currentTimer != null) {
+                imp.cancelwakeup(currentTimer);
+                currentTimer = null;
             }
+
+            if (jobs.len() > 0) {
+                // Remove the expired job from queue
+                local expJob = jobs.remove(0);
+                // Update job status
+                expJob.status = expJob.STATUS_EXPIRED;
+
+                // If timer should repeat, add it back to queue
+                if (expJob.repeatEveryXSec != null) {
+                    // Update trigger times
+                    expJob._setTriggersDur(expJob.repeatEveryXSec);
+                    // Update job status
+                    expJob.status = expJob.STATUS_QUEUED;
+
+                    // Update timer type, effects Job.reset()
+                    if (expJob.type == expJob.TYPE_REPEAT_FROM) {
+                        expJob.type = expJob.TYPE_REPEAT;
+                    }
+
+                    // Add job back into queue
+                    addJob(expJob);
+                }
+
+                // Trigger callback
+                expJob.cb.acall(expJob.args);
+
+                // Trigger next timer in queue
+                startTimer();
+            }
+        },
+
+        // Starts a timer for the first item in the queue if there is
+        // one
+        startTimer = function() {
+            if (jobs.len() > 0) {
+                if (currentTimer != null) {
+                    imp.cancelwakeup(currentTimer);
+                    currentTimer = null;
+                }
+
+                local dur = getTimerDuration(jobs[0]);
+                currentTimer = imp.wakeup(dur, next.bindenv(this));
+                currentJobId = jobs[0].id;
+            }
+        },
+
+        // Remove specified timer from queue, if it is the current timer
+        // queue up the next timer
+        // Note: This will cancel all subsequent repeats for repeated
+        // timers.
+        removeJob = function(id) {
+            // Cancel specified timer & remove from queue
+            // If this is the current job start timer to
+            // trigger next job in the queue
+            if (id == currentJobId) {
+                imp.cancelwakeup(currentTimer);
+                currentTimer = null;
+                currentJobId = null;
+            }
+
+            foreach (i, job in jobs) {
+                if (jobs[i].id == id) {
+                    jobs.remove(i);
+                    // Update job status
+                    job.status = job.STATUS_CANCELED;
+                    if (i == 0 && jobs.len() > 0) startTimer();
+                }
+            }
+        },
+
+        getTimerDuration = function(job) {
+            // Use job's triggerAtSec and triggerAtMs timestamps to return a duration til that trigger time
+            local nowSec, nowMs;
+            if (job.IS_AGENT) {
+                local now = date();
+                nowSec = now.time;
+                nowMs = now.usec / 1000;
+            } else {
+                local now = hardware.millis();
+                nowSec = now / 1000;
+                nowMs = now % 1000;
+            }
+            return (job.triggerAtSec - nowSec) + ((job.triggerAtMs - nowMs) * 0.001);
         }
     }
 
-    // Get the current time differently on device and agent
-    function _getTime() {
-        if (_env == ENVIRONMENT_AGENT) return date();
-        else                           return hardware.millis() / 1000.0;
-    }
+    // Job subclass - manage's each jobs settings
+    // -------------------------------------------------------------------
+    Job = class {
 
-    // Calculate "second" count for a timer differently on device and agent
-    function _getSec(dur, now) {
-        if (_env == ENVIRONMENT_AGENT) return math.floor(dur).tointeger() + now.time;
-        else                           return math.floor(dur).tointeger() + math.floor(now).tointeger();
-    }
+        static IS_AGENT         = (imp.environment() == ENVIRONMENT_AGENT);
+        static TYPE_SET         = "set";
+        static TYPE_AT          = "at";
+        static TYPE_REPEAT      = "repeat";
+        static TYPE_REPEAT_FROM = "repeat from";
 
-    // Calculate "sub second" count for a timer differently on device and agent
-    function _getSubSec(dur, now) {
-        if (_env == ENVIRONMENT_AGENT) return dur - math.floor(dur).tointeger() + (now.usec / 1000000.0);
-        else                           return dur - math.floor(dur).tointeger() + (now - math.floor(now).tointeger());
-    }
+        static STATUS_NEW       = "new";
+        static STATUS_QUEUED    = "queued";
+        static STATUS_EXPIRED   = "expired";
+        static STATUS_CANCELED  = "canceled";
 
-    function _getDur(job) {
-        if (_env == ENVIRONMENT_AGENT) {
-            local now = date();
-            return (job.sec - now.time) + (job.subSec - now.usec / 1000000.0);
-        } else {
-            local now = hardware.millis() / 1000.0;
-            local nowSec = math.floor(now).tointeger();
-            local nowSubSec = (now) - math.floor(now).tointeger();
-
-            return (job.sec - nowSec) + (job.subSec - nowSubSec);
+        function __statics__() {
+            const RESET_ERROR = "Cannot reset job type: %s";
         }
-    }
 
-}
+        _q              = null;
+        _postPauseDur   = null;
 
-class Scheduler.Job {
+        type            = null;
+        id              = null;
+        triggerAtSec    = null;
+        triggerAtMs     = null;
+        dur             = null;
+        repeatEveryXSec = null;
+        cb              = null;
+        args            = null;
+        status          = null;
 
-    _scheduler = null;
+        constructor (q, params) {
+            // Set all other params
+            if ("type" in params) type = params.type;
+            // Set time related params first
+            if ("dur" in params) {
+                _setTriggersDur(params.dur);
+                // Store for use in reset() method
+                if (type == TYPE_SET) dur = params.dur;
+            }
+            if ("time" in params) _setTriggersTime(params.time);
+            if ("cb" in params) cb = params.cb;
+            if ("args" in params) args = params.args;
+            if ("repeatSec" in params) repeatEveryXSec = params.repeatSec;
+            // Store pointer to the queue
+            _q = q;
+            // Calculate id based on current q
+            id = _q.nextId++;
+            status = STATUS_NEW;
+        }
 
-    type   = null;
-    id     = null;
-    dur    = null;
-    sec    = null;
-    subSec = null;
-    repeat = null;
-    cb     = null;
-    args   = null;
+        function getStatus() {
+            return status;
+        }
 
-    postPauseDur = null;
+        // Note if the timer is a repeating timer this will
+        // cancel this and all subsiquent calls
+        function cancel() {
+            // Remove job from the queue
+            _q.removeJob(id);
+            return this;
+        }
 
-    constructor(scheduler, params) {
-        try {
-            _scheduler = scheduler;
+        function now() {
+            // Trigger the callback immediately
+            // Leave in queue to trigger at scheduled time
+            cb.acall(args);
+            return this;
+        }
 
-            if ("type" in params)   type   = params.type;
-            if ("id" in params)     id     = params.id;
-            if ("dur" in params)    dur    = params.dur;
-            if ("sec" in params)    sec    = params.sec;
-            if ("subSec" in params) subSec = params.subSec;
-            if ("repeat" in params) repeat = params.repeat;
-            if ("cb" in params)     cb     = params.cb;
-            if ("args" in params)   args   = params.args;
+        function pause() {
+            // Remove job from queue
+            _q.removeJob(id);
+
+            // Based on job trigger vals calculate
+            // duration left before timer should trigger
+            _postPauseDur = _q.getTimerDuration(this);
 
             return this;
-        } catch (e) {
-            server.error(e);
-            throw e;
         }
-    }
 
-    // Cancel this job.
-    //
-    // Return: (Job) this
-    function cancel() {
-        _scheduler._cancel(id);
+        function unpause() {
+            // Use duration left stored when job paused
+            // to calculate new tigger time
+            if (_setTriggersDur != null) {
+                _setTriggersDur(_postPauseDur);
+                // Add job back to queue
+                _q.addJob(this);
+                _postPauseDur = null;
+            }
+            return this;
+        }
 
-        return this;
-    }
+        function reset(newDur = null) {
+            // Check timer type, if valid type update queue and trigger times
+            if (type == TYPE_AT || type == TYPE_REPEAT_FROM) {
+                throw format(RESET_ERROR, type);
+            }
 
-    // Trigger this job to fire immediately.
-    //
-    // Return: (Job) this
-    function now() {
-        _scheduler._now(id);
+            // Sync store duration/repeatEveryXSec with new duration
+            // Note: Only TYPE_SET has stored duration
+            if (type == TYPE_SET) {
+                (newDur == null) ? newDur = dur : dur = newDur;
+            } else if (type == TYPE_REPEAT) {
+                (newDur == null) ? newDur = repeatEveryXSec : repeatEveryXSec = newDur;
+            }
 
-        return this;
-    }
+            // Update Job's trigger times
+            _setTriggersDur(newDur);
 
-    // Pause the timer for this job.
-    //
-    // Return: (Job) this
-    function pause() {
-        postPauseDur = _scheduler._getDur({"sec": sec, "subSec": subSec});
+            // Remove timer from q
+            _q.removeJob(id);
 
-        _scheduler._cancel(id);
+            // Add job back to queue
+            _q.addJob(this);
 
-        return this;
-    }
+            return this;
+        }
 
-    // Unpause the timer for this job.
-    //
-    // Return: (Job) this
-    function unpause() {
-        local now = _scheduler._getTime();
+        function _setTriggersTime(ts) {
+            // Ensure timestamp is what we expect
+            if (typeof ts == "float") ts = ts.tointeger();
+            local now = time();
+            if (ts < now) ts = now;
 
-        sec = _scheduler._getSec(postPauseDur, now);
-        subSec = _scheduler._getSubSec(postPauseDur, now);
+            // Note integer timestamps on imp have second
+            // granularity
+            if (IS_AGENT) {
+                // Agent uses date() to set trigger time
+                triggerAtSec = ts;
+                triggerAtMs  = 0;
+            } else {
+                // Device uses time since boot (in ms), to
+                // get sub second granularity, so convert
+                // epoch timestamp.
 
-        postPauseDur = null;
+                // Get current ms timestamp
+                local msBoot = hardware.millis();
+                // Calculate duration of timer based on
+                // current epoch time
+                local durSec = ts - now;
 
-        _scheduler._addJob(this);
-
-        return this;
-    }
-
-    // Reset the timer for this job to start again. Doesn't work for "at" jobs or first execution of "repeat_from" jobs.
-    //
-    // Parameters:
-    //     rstDur (float) [null]       The optional new duration of the job's timer. Will default to the original duration
-    // Return: (Job) this
-    function reset(rstDur=null) {
-        if ([JOB_TYPE_AT, JOB_TYPE_REPEAT_FROM].find(type) != null) throw format(JOB_ERROR_RESET, type);
-
-        local now = _scheduler._getTime();
-
-        // Find the duration to reset the timer with
-        if (rstDur == null) {
-            if ("dur" in this) {
-                rstDur = dur;
-            } else if ("repeat" in this) {
-                rstDur = repeat;
+                // Calculate when timer should fire based
+                // on hardware.millis. Since agent has to
+                // split second and ms times, do that on
+                // the device.
+                triggerAtSec = (msBoot / 1000) + durSec;
+                triggerAtMs  = msBoot % 1000;
             }
         }
 
-        sec = _scheduler._getSec(rstDur, now);
-        subSec = _scheduler._getSubSec(rstDur, now);
+        function _setTriggersDur(dur) {
+            // Ensure timestamp is what we expect
+            if (dur < 0) dur = 0;
 
-        _scheduler._cancel(id);
-        _scheduler._addJob(this);
-
-        return this;
+            // Calculate time when job should trigger at
+            // Value is split into 2 integer values (second, ms)
+            if (IS_AGENT) {
+                local now = date();
+                triggerAtSec = (dur / 1) + now.time;
+                triggerAtMs  = (dur % 1) + now.usec / 1000;
+            } else {
+                local now = hardware.millis();
+                triggerAtSec = (dur / 1) + now / 1000;
+                triggerAtMs  = (dur % 1) + now % 1000;
+            }
+        }
     }
 
 }

@@ -49,7 +49,7 @@ class RepeatTestCase extends ImpTestCase {
 
             local interval = -3;
             local testJob;
-            testJob = _scheduler.repeat(interval, function() {
+            testJob = _scheduler.repeat(interval, null, function() {
                 local firedTime = _calcDate();
                 local timeError = _calcError(firedTime, setTime);
 
@@ -72,7 +72,7 @@ class RepeatTestCase extends ImpTestCase {
     function testRepeatWithParams() {
         return Promise(function(resolve, reject) {
             local job1 = null;
-            job1 = _scheduler.repeat(0, function(testInt) {
+            job1 = _scheduler.repeat(0, null, function(testInt) {
                 try {
                     this.assertTrue(testInt == 5, "Parameter not passed correctly to callback");
                     resolve();
@@ -90,7 +90,7 @@ class RepeatTestCase extends ImpTestCase {
             local setTime = _calcDate();
 
             local testJob;
-            testJob = _scheduler.repeat(interval, function() {
+            testJob = _scheduler.repeat(interval, null, function() {
                 local firedTime = _calcDate();
                 local timeError = _calcError(firedTime, setTime) - interval;
 

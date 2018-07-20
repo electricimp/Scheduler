@@ -75,15 +75,16 @@ local inFiveSecs = time() + 5;
 job1 <- sch.at(inFiveSecs, logMsg, "Timer fired");
 ```
 
-### repeat(*interval, callback[, ...]*) ###
+### repeat(*interval, time, callback[, ...]*) ###
 
-This method creates a new job with a callback that will repeat at the specified interval.
+This method creates a new job with a callback that will repeat at the specified interval. To create a timer that repeat's from a specified time, pass a timestamp into the time parameter, otherwise pass `null` into the time parameter.
 
 #### Parameters ####
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | *interval* | Integer or float | Yes | The interval between timer firings in seconds |
+| *time* | Integer or Null | Yes | The time at which the timer should fire, or `null` if timer should trigger based on the interval. |
 | *callback* | Function | Yes | The function to run when the timer fires |
 | ... | Any | No | Optional parameters that will be passed into the callback |
 
@@ -94,39 +95,14 @@ A Scheduler.Job instance, or an error message if an error was encountered.
 #### Example ####
 
 ```squirrel
-function logMsg(msg) {
-  server.log(msg);
+function logMsg(msg, jobName) {
+  server.log(jobName + ": " + msg);
 }
 
-job1 <- sch.repeat(10, logMsg, "Repeats every ten seconds...");
-```
-
-### repeatFrom(*time, interval, callback[, ...]*) ###
-
-This method reates a new job with a callback to execute at the specified time, and then repeat at the specified interval.
-
-#### Parameters ####
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| *time* | Integer | Yes | The time at which the timer should fire |
-| *interval* | Integer or float | Yes | The interval between timer firings in seconds |
-| *callback* | Function | Yes | The function to run when the timer fires |
-| ... | Any | No | Optional parameters that will be passed into the callback |
-
-#### Return Value ####
-
-A Scheduler.Job instance.
-
-#### Example ####
-
-```squirrel
-function logMsg(msg) {
-  server.log(msg);
-}
+job1 <- sch.repeat(10, null, logMsg, "Repeats every ten seconds...", "Job 1");
 
 local inFiveSecs = time() + 5;
-job1 <- sch.repeatFrom(inFiveSecs, 10, logMsg, "Repeats every ten seconds...");
+job2 <- sch.repeatFrom(10, inFiveSecs, logMsg, "Repeats every ten seconds...", "Job 2");
 ```
 
 ## Scheduler.Job Usage ##
@@ -137,7 +113,7 @@ You should never call the Scheduler.Job constructor directly. Instead, you shoul
 
 ### now() ###
 
-This method immediately execute the job.
+This method immediately execute the job's callback immediately. It will leave the job in the queue.
 
 #### Return Value ####
 
@@ -175,7 +151,7 @@ job1.pause();
 
 ### unpause() ###
 
-This method resumes the execution of a paused job's timer.
+This method resumes the execution of a paused job's timer. The timer will not reset, it will trigger based on the time remaining when it was paused.
 
 #### Return Value ####
 
@@ -189,14 +165,13 @@ function logMsg(msg) {
 }
 
 job1 <- sch.set(5, logMsg, "Timer fired");
-job1.pause();
-
+imp.wakeup(2, job1.pause);
 imp.wakeup(10, job1.unpause);
 ```
 
 ### cancel() ###
 
-This method cancels the job.
+This method cancels the job. If it is a repeated job it will cancel all repeats as well.
 
 #### Return Value ####
 
@@ -217,7 +192,7 @@ job1.cancel();
 
 This method resets the target job &mdash; ie. it restarts the timer). Optionally, a new duration can be passed in to alter when the timer fires (if it has not done so already).
 
-This method can't be used for jobs created with the Scheduler *at()* method or during the first timer of jobs created with the Scheduler *repeatFrom()* method. However, it can be used for Scheduler *repeatFrom()* jobs after they have fired the first time.
+This method can't be used for jobs set to fire at a specified time. Jobs created with the Scheduler *at()* method or before the first callback of jobs created with the Scheduler *repeat()* method where a time was passed in.
 
 #### Parameters ####
 

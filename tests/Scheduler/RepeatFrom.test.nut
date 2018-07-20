@@ -58,7 +58,7 @@ function _testRepeatFrom(timeToFire, interval) {
         if (!_isAgent()) timeToFire += time();
 
         local testJob;
-        testJob = _scheduler.repeatFrom(timeToFire, interval, function() {
+        testJob = _scheduler.repeat(interval, timeToFire, function() {
             local firedDate = date();
             local firedTime = firedDate.time;
             local timeError;
@@ -121,7 +121,7 @@ class RepeatFromTestCase extends ImpTestCase {
 
             local interval = -3;
             local testJob;
-            testJob = _scheduler.repeatFrom(timeToFire, interval, function() {
+            testJob = _scheduler.repeat(interval, timeToFire, function() {
                 local firedTime = _calcTime();
                 local timeError = _calcError(firedTime, timeToFire, setTime);
 
@@ -145,7 +145,7 @@ class RepeatFromTestCase extends ImpTestCase {
     function testRepeatFromWithParams() {
         return Promise(function(resolve, reject) {
             local job1 = null;
-            job1 = _scheduler.repeatFrom(time(), 0, function(testInt) {
+            job1 = _scheduler.repeat(0, time(), function(testInt) {
                 try {
                     this.assertTrue(testInt == 5, "Parameter not passed correctly to callback");
                     resolve();
