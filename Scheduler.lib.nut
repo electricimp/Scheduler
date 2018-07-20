@@ -273,6 +273,7 @@ class Scheduler {
     Job = class {
 
         static IS_AGENT         = (imp.environment() == ENVIRONMENT_AGENT);
+
         static TYPE_SET         = "set";
         static TYPE_AT          = "at";
         static TYPE_REPEAT      = "repeat";
@@ -333,57 +334,28 @@ class Scheduler {
         }
 
         function now() {
-            // Trigger the callback immediately
-            // Leave in queue to trigger at scheduled time
+            // Remove job from the queue
+            _q.removeJob(id);
+
+            // Update type for repeat from types
+            if (type == TYPE_REPEAT_FROM) {
+                type == TYPE_REPEAT;
+            }
+
+            // Requeue repeated timer
+            if (type == TYPE_REPEAT) {
+                // Update trigger time
+                _setTriggersDur(repeatEveryXSec);
+                // Add back to q
+                _q.addJob(job);
+            } else {
+                // For one time timers update status
+                // to expired (instead of canceled)
+                status = STATUS_EXPIRED;
+            }
+
+            // Trigger callback
             cb.acall(args);
-            return this;
-        }
-
-        function pause() {
-            // Remove job from queue
-            _q.removeJob(id);
-
-            // Based on job trigger vals calculate
-            // duration left before timer should trigger
-            _postPauseDur = _q.getTimerDuration(this);
-
-            return this;
-        }
-
-        function unpause() {
-            // Use duration left stored when job paused
-            // to calculate new tigger time
-            if (_setTriggersDur != null) {
-                _setTriggersDur(_postPauseDur);
-                // Add job back to queue
-                _q.addJob(this);
-                _postPauseDur = null;
-            }
-            return this;
-        }
-
-        function reset(newDur = null) {
-            // Check timer type, if valid type update queue and trigger times
-            if (type == TYPE_AT || type == TYPE_REPEAT_FROM) {
-                throw format(RESET_ERROR, type);
-            }
-
-            // Sync store duration/repeatEveryXSec with new duration
-            // Note: Only TYPE_SET has stored duration
-            if (type == TYPE_SET) {
-                (newDur == null) ? newDur = dur : dur = newDur;
-            } else if (type == TYPE_REPEAT) {
-                (newDur == null) ? newDur = repeatEveryXSec : repeatEveryXSec = newDur;
-            }
-
-            // Update Job's trigger times
-            _setTriggersDur(newDur);
-
-            // Remove timer from q
-            _q.removeJob(id);
-
-            // Add job back to queue
-            _q.addJob(this);
 
             return this;
         }
