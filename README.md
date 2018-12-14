@@ -106,7 +106,7 @@ function logMsg(msg, jobName) {
 job1 <- sch.repeat(10, null, logMsg, "Repeats every ten seconds...", "Job 1");
 
 local inFiveSecs = time() + 5;
-job2 <- sch.repeatFrom(10, inFiveSecs, logMsg, "Repeats every ten seconds...", "Job 2");
+job2 <- sch.repeat(10, inFiveSecs, logMsg, "Repeats every ten seconds...", "Job 2");
 ```
 
 ## Scheduler.Job Usage ##
