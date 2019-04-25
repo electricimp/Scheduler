@@ -10,6 +10,8 @@ This library provides a simple class to help you manage jobs using one-shot and 
 
 **Note** This is a beta release. Please file issues in [GitHub](https://github.com/electricimp/Scheduler) to help us improve this library.
 
+![Build Status](https://cse-ci.electricimp.com/app/rest/builds/buildType:(id:Scheduler_BuildAndTest)/statusIcon)
+
 ## Scheduler Usage ##
 
 This class manages all jobs. Each method for creating a job will return a new Scheduler.Job instance.
