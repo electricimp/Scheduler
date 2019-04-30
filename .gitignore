@@ -10,3 +10,4 @@ Scheduler.device.lib.nut
 Scheduler.agent.lib.nut
 agent.nut
 device.nut
+.DS_Store
